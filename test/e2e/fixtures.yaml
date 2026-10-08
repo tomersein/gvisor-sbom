@@ -1,0 +1,136 @@
+# Pods with known runtime changes. Every pod pins what it installs and logs
+# "ready" when its change is complete. __NODE__ is replaced by run.sh so that
+# node mode, which only sees its own node, finds them all.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: gvsbom-e2e
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: e2e-creds
+  namespace: gvsbom-e2e
+stringData:
+  password: not-a-real-password
+---
+# Installs five pinned packages after start.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: e2e-add
+  namespace: gvsbom-e2e
+spec:
+  nodeName: __NODE__
+  runtimeClassName: gvisor
+  terminationGracePeriodSeconds: 0
+  containers:
+  - name: app
+    image: python:3.12-slim
+    command: ["sh", "-ec", "pip install -q --no-deps --disable-pip-version-check requests==2.32.3 urllib3==2.2.3 idna==3.10 certifi==2024.8.30 charset-normalizer==3.4.0; echo ready; sleep infinity"]
+---
+# Removes a Debian package (rewrites dpkg's status) and downgrades pip
+# (whiteouts for the old version).
+apiVersion: v1
+kind: Pod
+metadata:
+  name: e2e-change
+  namespace: gvsbom-e2e
+spec:
+  nodeName: __NODE__
+  runtimeClassName: gvisor
+  terminationGracePeriodSeconds: 0
+  containers:
+  - name: app
+    image: python:3.12-slim
+    command: ["sh", "-ec", "dpkg -r --force-depends netbase >/dev/null; pip install -q --no-deps --disable-pip-version-check pip==24.0; echo ready; sleep infinity"]
+---
+# No tar, no shell: the distroless case.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: e2e-notar
+  namespace: gvsbom-e2e
+  labels:
+    gvsbom-e2e/no-ready-log: "true"
+spec:
+  nodeName: __NODE__
+  runtimeClassName: gvisor
+  terminationGracePeriodSeconds: 0
+  containers:
+  - name: pause
+    image: registry.k8s.io/pause:3.10
+---
+# A secret, software on an emptyDir, and software in gVisor's in-memory /tmp.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: e2e-vol
+  namespace: gvsbom-e2e
+spec:
+  nodeName: __NODE__
+  runtimeClassName: gvisor
+  terminationGracePeriodSeconds: 0
+  volumes:
+  - name: creds
+    secret:
+      secretName: e2e-creds
+  - name: venv
+    emptyDir: {}
+  containers:
+  - name: app
+    image: python:3.12-slim
+    command: ["sh", "-ec", "pip install -q --no-deps --disable-pip-version-check --target /opt/venv six==1.16.0; pip install -q --no-deps --disable-pip-version-check --target /tmp/tools colorama==0.4.6; echo ready; sleep infinity"]
+    volumeMounts:
+    - name: creds
+      mountPath: /etc/creds
+      readOnly: true
+    - name: venv
+      mountPath: /opt/venv
+---
+# Plants a package whose name and version carry terminal escape sequences.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: e2e-evil
+  namespace: gvsbom-e2e
+spec:
+  nodeName: __NODE__
+  runtimeClassName: gvisor
+  terminationGracePeriodSeconds: 0
+  containers:
+  - name: app
+    image: python:3.12-slim
+    command: ["sh", "-ec", "d=/usr/local/lib/python3.12/site-packages/evil-6.6.6.dist-info; mkdir -p $d; printf 'Metadata-Version: 2.1\\nName: evil\\033[2K\\033[1A\\r  + totally-harmless\\nVersion: 6.6.6\\033[8m\\n' > $d/METADATA; echo ready; sleep infinity"]
+---
+# Installs requests, then replaces its own tar with one that hides it.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: e2e-liar
+  namespace: gvsbom-e2e
+spec:
+  nodeName: __NODE__
+  runtimeClassName: gvisor
+  terminationGracePeriodSeconds: 0
+  containers:
+  - name: app
+    image: python:3.12-slim
+    # GNU tar takes the short "cf" form only as the first argument, so the
+    # fake keeps "cf -" first and slips its exclude in after them.
+    command: ["sh", "-ec", "pip install -q --no-deps --disable-pip-version-check requests==2.32.3; t=$(command -v tar); mv $t $t.real; printf '#!/bin/sh\\na=$1; b=$2; shift 2\\nexec %s.real \"$a\" \"$b\" --exclude=*requests* \"$@\"\\n' $t > $t; chmod +x $t; echo ready; sleep infinity"]
+---
+# Default runtime: must never be scanned.
+apiVersion: v1
+kind: Pod
+metadata:
+  name: e2e-runc
+  namespace: gvsbom-e2e
+  labels:
+    gvsbom-e2e/no-ready-log: "true"
+spec:
+  nodeName: __NODE__
+  terminationGracePeriodSeconds: 0
+  containers:
+  - name: pause
+    image: registry.k8s.io/pause:3.10
