@@ -97,7 +97,7 @@ func (s *Scanner) Scan(ctx context.Context, t kube.Target) Result {
 	}
 	res := Result{Target: t, Mode: s.opts.Mode}
 	dir := filepath.Join(s.opts.OutputDir, t.Namespace, t.Pod, t.Container)
-	if err := os.MkdirAll(dir, 0o755); err != nil {
+	if err := os.MkdirAll(dir, 0o755); err != nil { // #nosec G301 -- SBOM output is a report meant to be read by other users
 		res.Errors = append(res.Errors, err.Error())
 		return res
 	}
@@ -145,7 +145,7 @@ func (s *Scanner) Scan(ctx context.Context, t kube.Target) Result {
 	}
 
 	if b, err := json.MarshalIndent(res, "", "  "); err == nil {
-		_ = os.WriteFile(filepath.Join(dir, "result.json"), b, 0o644)
+		_ = os.WriteFile(filepath.Join(dir, "result.json"), b, 0o644) // #nosec G306 -- report meant to be read by other users
 	}
 	return res
 }
@@ -188,7 +188,7 @@ func (s *Scanner) runtimeSBOM(ctx context.Context, t kube.Target, dir string, im
 			return nil, err
 		}
 	}
-	if err := os.Mkdir(copyDir, 0o755); err != nil {
+	if err := os.Mkdir(copyDir, 0o700); err != nil {
 		return nil, err
 	}
 
@@ -254,7 +254,7 @@ func (s *Scanner) copyRootfs(ctx context.Context, t kube.Target, dir string, exc
 		_, _ = io.Copy(io.Discard, pr)
 	} else {
 		cancel()
-		pr.CloseWithError(xerr)
+		_ = pr.CloseWithError(xerr)
 	}
 	execErr := <-execDone
 
@@ -310,7 +310,7 @@ func (s *Scanner) fromUpperLayer(ctx context.Context, t kube.Target, work, copyD
 	if err := s.opts.Runsc.RootfsUpper(ctx, id, archive); err != nil {
 		return nil, err
 	}
-	f, err := os.Open(archive)
+	f, err := os.Open(archive) // #nosec G304 -- archive is a fixed name inside our own MkdirTemp directory
 	if err != nil {
 		return nil, err
 	}

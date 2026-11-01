@@ -27,7 +27,7 @@ func Print(w io.Writer, results []scanner.Result) {
 			r.Target, count(r.ImageSBOM, r.ImagePackages), count(r.RuntimeSBOM, r.RuntimePackages),
 			added, removed, changed, status(r))
 	}
-	tw.Flush()
+	_ = tw.Flush()
 
 	for _, r := range results {
 		if r.Drift == nil && len(r.Errors) == 0 && len(r.Warnings) == 0 {
