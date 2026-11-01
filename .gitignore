@@ -1,3 +1,4 @@
 /bin/
 /sbom-output/
 /lab.kubeconfig
+/cover.out

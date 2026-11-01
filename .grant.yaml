@@ -1,0 +1,22 @@
+require-license: false
+require-known-license: false
+
+allow:
+  - Apache-2.0
+  - MIT
+  - BSD-2-Clause
+  - BSD-2-Clause-Views
+  - BSD-3-Clause
+  - ISC
+  - 0BSD
+  - CC0-1.0
+  - Unicode-DFS-2016
+  - MPL-2.0
+
+ignore-packages:
+  # Apache-2.0; syft's test fixtures contain GPL licence files
+  - github.com/anchore/syft
+  # Apache-2.0 OR GPL-2.0-or-later for code, CC-BY-4.0 for docs; we use it under Apache-2.0
+  - github.com/spdx/tools-golang
+  # Apache-2.0 for code, CC-BY-SA-4.0 for docs only
+  - github.com/opencontainers/go-digest
