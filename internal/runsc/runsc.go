@@ -36,7 +36,7 @@ func ContainerID(statusID string) (string, error) {
 // layer itself, so the workload cannot substitute its own archive. Whiteout
 // entries (character devices 0:0) mark deleted paths.
 func (e Exporter) RootfsUpper(ctx context.Context, containerID, file string) error {
-	cmd := exec.CommandContext(ctx, e.Binary, "--root", e.Root, "tar", "rootfs-upper", "--file", file, containerID)
+	cmd := exec.CommandContext(ctx, e.Binary, "--root", e.Root, "tar", "rootfs-upper", "--file", file, containerID) // #nosec G204 -- the operator chooses runsc with --runsc; no shell, the ID is validated
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		return fmt.Errorf("runsc tar rootfs-upper: %w: %s", err, clean.Message(strings.TrimSpace(string(out))))

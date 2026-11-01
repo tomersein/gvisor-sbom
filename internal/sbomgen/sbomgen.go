@@ -77,5 +77,5 @@ func WriteCycloneDX(s *sbom.SBOM, path string) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, b, 0o644)
+	return os.WriteFile(path, b, 0o644) // #nosec G306 -- an SBOM is a report meant to be read by other users
 }

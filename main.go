@@ -133,7 +133,7 @@ func run() int {
 	}
 
 	if b, err := json.MarshalIndent(results, "", "  "); err == nil {
-		_ = os.WriteFile(filepath.Join(opts.OutputDir, "summary.json"), b, 0o644)
+		_ = os.WriteFile(filepath.Join(opts.OutputDir, "summary.json"), b, 0o644) // #nosec G306 -- report meant to be read by other users
 		if jsonOut {
 			fmt.Println(string(b))
 		}
