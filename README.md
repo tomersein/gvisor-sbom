@@ -1,5 +1,7 @@
 # gvsbom
 
+[![zanadir](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/tomersein/gvisor-sbom/badges/zanadir-badge.json)](https://mustachecase.github.io/scan/?repo=tomersein/gvisor-sbom)
+
 Extracts SBOMs from Kubernetes pods that run under [gVisor](https://gvisor.dev), and reports what changed in each container since it started.
 
 ```
